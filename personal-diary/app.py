@@ -10,25 +10,14 @@ FILE_NAME = 'entries.json'
 # Задание 12.1. Функция загрузки записей из JSON
 def load_entries():
     if os.path.exists(FILE_NAME):
-        try:
-            with open(FILE_NAME, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                # Проверяем, что данные - список
-                if isinstance(data, list):
-                    return data
-                else:
-                    return []
-        except (json.JSONDecodeError, IOError):
-            return []
+        with open(FILE_NAME, 'r', encoding='utf-8') as f:
+            return json.load(f)
     return []
 
 # Задание 12.2. Функция сохранения записей в JSON
 def save_entries(entries):
-    try:
-        with open(FILE_NAME, 'w', encoding='utf-8') as f:
-            json.dump(entries, f, ensure_ascii=False, indent=2)
-    except IOError as e:
-        print(f"Ошибка при сохранении: {e}")
+    with open(FILE_NAME, 'w', encoding='utf-8') as f:
+        json.dump(entries, f, ensure_ascii=False, indent=2)
 
 # Задание 12.3. Загрузка записей в переменную
 entries = load_entries()
@@ -41,7 +30,7 @@ def index():
 # Задание 14. Маршрут просмотра записи
 @app.route('/entry/<int:entry_id>')
 def view_entry(entry_id):
-    entry = next((e for e in entries if e.get('id') == entry_id), None)
+    entry = next((e for e in entries if e['id'] == entry_id), None)
     if entry:
         return render_template('detail.html', entry=entry)
     return "Запись не найдена", 404
@@ -50,15 +39,12 @@ def view_entry(entry_id):
 @app.route('/add', methods=['GET', 'POST'])
 def add_entry():
     if request.method == 'POST':
-        title = request.form.get('title', '').strip()
-        content = request.form.get('content', '').strip()
-        
-        if not title or not content:
-            return "Заголовок и текст не могут быть пустыми", 400
+        title = request.form['title']
+        content = request.form['content']
         
         # Генерация нового ID
         if entries:
-            new_id = max(e.get('id', 0) for e in entries) + 1
+            new_id = max(e['id'] for e in entries) + 1
         else:
             new_id = 1
         
@@ -79,14 +65,14 @@ def add_entry():
 # Задание 16. Маршрут редактирования записи
 @app.route('/edit/<int:entry_id>', methods=['GET', 'POST'])
 def edit_entry(entry_id):
-    entry = next((e for e in entries if e.get('id') == entry_id), None)
+    entry = next((e for e in entries if e['id'] == entry_id), None)
     
     if not entry:
         return "Запись не найдена", 404
     
     if request.method == 'POST':
-        entry['title'] = request.form.get('title', '').strip()
-        entry['content'] = request.form.get('content', '').strip()
+        entry['title'] = request.form['title']
+        entry['content'] = request.form['content']
         save_entries(entries)
         return redirect('/')
     
@@ -96,16 +82,16 @@ def edit_entry(entry_id):
 @app.route('/delete/<int:entry_id>', methods=['POST'])
 def delete_entry(entry_id):
     global entries
-    entries = [e for e in entries if e.get('id') != entry_id]
+    entries = [e for e in entries if e['id'] != entry_id]
     save_entries(entries)
     return redirect('/')
 
 # Задание 18. Маршрут поиска
 @app.route('/search')
 def search_entries():
-    query = request.args.get('q', '').strip()
+    query = request.args.get('q', '')
     if query:
-        filtered_entries = [e for e in entries if query.lower() in e.get('title', '').lower()]
+        filtered_entries = [e for e in entries if query.lower() in e['title'].lower()]
     else:
         filtered_entries = entries
     return render_template('index.html', entries=filtered_entries)
@@ -119,17 +105,15 @@ def filter_week():
     for entry in entries:
         try:
             # Парсим дату из формата 'дд.мм.гггг ЧЧ:ММ'
-            date_str = entry.get('date', '')
-            if date_str and date_str != 'Дата неизвестна':
-                entry_date = datetime.strptime(date_str, '%d.%m.%Y %H:%M')
-                if entry_date >= week_ago:
-                    filtered_entries.append(entry)
-            else:
-                # Если даты нет, пропускаем
-                pass
-        except (ValueError, KeyError):
+            entry_date = datetime.strptime(entry['date'], '%d.%m.%Y %H:%M')
+            if entry_date >= week_ago:
+                filtered_entries.append(entry)
+        except:
             # Если дата не распарсилась, пропускаем запись
             pass
     
-    # Добавляем информацию о фильтре в шаблон
-    return render_template('index.html', entries=filtered_entries, filter_info="За последние 7 дней")
+    return render_template('index.html', entries=filtered_entries)
+
+# Задание 20. Запуск приложения
+if __name__ == '__main__':
+    app.run(debug=True)
