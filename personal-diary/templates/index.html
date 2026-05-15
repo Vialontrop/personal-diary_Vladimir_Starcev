@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Мои записи</h1>
+
+{% if entries %}
+    {% for entry in entries %}
+    <div class="entry-item">
+        <h2>{{ entry.title }}</h2>
+        <p class="entry-date">{{ entry.date }}</p>
+        <div class="entry-actions">
+            <a href="/entry/{{ entry.id }}">Читать</a>
+            <form method="POST" action="/delete/{{ entry.id }}" style="display: inline;">
+                <button type="submit" onclick="return confirm('Вы уверены, что хотите удалить эту запись?')">Удалить</button>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <p>Пока нет записей. Создайте первую!</p>
+{% endif %}
+{% endblock %}
